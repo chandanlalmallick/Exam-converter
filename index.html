@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSIR-NET Mock Converter</title>
+<meta name="description" content="Convert your prepared CSIR-NET questions into a realistic online mock test.">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+
+<!-- KaTeX -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+
+<!-- html2pdf (jsPDF + html2canvas bundle) for the offline question-paper PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/print.css" media="print">
+</head>
+<body>
+
+<div id="toast-region" class="toast-region" aria-live="polite"></div>
+
+<!-- ============ APP SHELL (dashboard) ============ -->
+<div id="app-shell" class="app-shell">
+
+  <header class="app-header no-print">
+    <div class="app-header__inner">
+      <div class="app-header__brand">
+        <span class="app-header__mark">CN</span>
+        <div>
+          <h1 class="app-header__title">CSIR-NET Mock Converter</h1>
+          <p class="app-header__subtitle">Convert your prepared questions into a realistic online mock test.</p>
+        </div>
+      </div>
+      <div class="app-header__credit">Created by Chandanlal</div>
+    </div>
+
+    <nav class="app-nav" aria-label="Mock builder steps">
+      <button class="app-nav__item" data-nav="create" type="button">
+        <span class="app-nav__num">1</span> Create Mock
+      </button>
+      <button class="app-nav__item" data-nav="input" type="button">
+        <span class="app-nav__num">2</span> Question Input
+      </button>
+      <button class="app-nav__item" data-nav="preview" type="button">
+        <span class="app-nav__num">3</span> Preview &amp; Validation
+      </button>
+      <button class="app-nav__item" data-nav="exam" type="button">
+        <span class="app-nav__num">4</span> Exam
+      </button>
+      <button class="app-nav__item" data-nav="results" type="button">
+        <span class="app-nav__num">5</span> Results
+      </button>
+      <button class="app-nav__item" data-nav="pdf" type="button">
+        <span class="app-nav__num">6</span> Offline PDF
+      </button>
+    </nav>
+  </header>
+
+  <main class="app-main no-print">
+
+    <!-- ===== 1. CREATE MOCK ===== -->
+    <section class="panel" id="panel-create" data-panel="create">
+      <div class="panel__card panel__card--narrow">
+        <h2 class="panel__title">Create your mock</h2>
+        <p class="panel__lede">Name your mock, then move on to paste in your 60 questions.</p>
+
+        <label class="field">
+          <span class="field__label">Mock title</span>
+          <input type="text" id="mock-title-input" class="field__input"
+                 value="CSIR-NET Mathematical Sciences Mock Test">
+        </label>
+
+        <div class="info-box">
+          <h3>How this works</h3>
+          <ol>
+            <li>Paste your complete 60-question paper (Part A: 15, Part B: 25, Part C: 20).</li>
+            <li>The converter parses it and checks it&rsquo;s complete — it never adds, removes or rewrites a question.</li>
+            <li>Review and fix anything flagged in the preview, then start the timed mock.</li>
+            <li>Download a clean, answer-free question paper for offline practice any time.</li>
+          </ol>
+        </div>
+
+        <div class="panel__actions">
+          <button class="btn btn--primary" id="btn-go-to-input" type="button">Continue to Question Input →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 2. QUESTION INPUT ===== -->
+    <section class="panel" id="panel-input" data-panel="input" hidden>
+      <div class="panel__card">
+        <h2 class="panel__title">Paste your 60 questions</h2>
+        <p class="panel__lede">Use the <code>PART A / PART B / PART C</code>, <code>Qn.</code>, <code>(A)(B)(C)(D)</code>, <code>TYPE:</code> and <code>Correct Answer:</code> format shown in the example. LaTeX (<code>\[ \]</code> and <code>\( \)</code>) is preserved exactly.</p>
+
+        <div class="input-toolbar">
+          <button class="btn btn--ghost" id="btn-load-example" type="button">Load Example Format</button>
+          <button class="btn btn--ghost" id="btn-save-draft" type="button">Save Draft</button>
+          <button class="btn btn--ghost" id="btn-load-draft" type="button">Load Draft</button>
+          <button class="btn btn--ghost btn--danger" id="btn-clear-draft" type="button">Clear Draft</button>
+          <span class="draft-status" id="draft-status"></span>
+        </div>
+
+        <textarea id="question-textarea" class="question-textarea"
+                  placeholder="Paste your 60 questions here"
+                  spellcheck="false"></textarea>
+
+        <div class="panel__actions panel__actions--split">
+          <button class="btn btn--text" id="btn-back-to-create" type="button">← Back</button>
+          <button class="btn btn--primary" id="btn-parse" type="button">Parse &amp; Validate</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 3. PREVIEW & VALIDATION ===== -->
+    <section class="panel" id="panel-preview" data-panel="preview" hidden>
+      <div class="panel__card panel__card--wide">
+        <h2 class="panel__title">Preview &amp; validation</h2>
+
+        <div class="validation-dashboard" id="validation-dashboard"><!-- rendered by JS --></div>
+        <div class="issue-list" id="issue-list"></div>
+
+        <div class="preview-toolbar">
+          <button class="btn btn--ghost" id="btn-add-question" type="button">+ Add Question</button>
+          <button class="btn btn--ghost" id="btn-export-json" type="button">Export Mock (JSON)</button>
+          <label class="btn btn--ghost btn--file">
+            Import Mock (JSON)
+            <input type="file" id="import-json-input" accept="application/json" hidden>
+          </label>
+          <span class="preview-toolbar__count" id="preview-count"></span>
+        </div>
+
+        <div class="question-list" id="question-list"><!-- rendered by JS --></div>
+
+        <div class="panel__actions panel__actions--split">
+          <button class="btn btn--text" id="btn-back-to-input" type="button">← Back to Question Input</button>
+          <button class="btn btn--primary" id="btn-create-mock" type="button" disabled>Create Mock</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 4. EXAM (pre-start screen; full exam UI is injected at #exam-root) ===== -->
+    <section class="panel" id="panel-exam" data-panel="exam" hidden>
+      <div class="panel__card panel__card--narrow" id="exam-start-card">
+        <h2 class="panel__title" id="exam-mock-title">Ready to begin</h2>
+        <div class="exam-meta">
+          <div class="exam-meta__item"><strong>Duration</strong><span>180 minutes</span></div>
+          <div class="exam-meta__item"><strong>Questions</strong><span>60 (Part A: 15 · Part B: 25 · Part C: 20)</span></div>
+          <div class="exam-meta__item"><strong>Max marks</strong><span>200</span></div>
+        </div>
+        <div class="info-box">
+          <h3>Marking scheme</h3>
+          <ul>
+            <li>Part A — +2 correct, −0.5 incorrect</li>
+            <li>Part B — +3 correct, −0.75 incorrect</li>
+            <li>Part C — +4.75 correct, no negative marking</li>
+          </ul>
+        </div>
+        <div class="panel__actions">
+          <button class="btn btn--primary btn--lg" id="btn-start-mock" type="button">Start Mock</button>
+        </div>
+        <p class="resume-note" id="resume-note" hidden></p>
+      </div>
+    </section>
+
+    <!-- ===== 5. RESULTS ===== -->
+    <section class="panel" id="panel-results" data-panel="results" hidden>
+      <div class="panel__card panel__card--wide" id="results-root"><!-- rendered by JS --></div>
+    </section>
+
+    <!-- ===== 6. OFFLINE PDF ===== -->
+    <section class="panel" id="panel-pdf" data-panel="pdf" hidden>
+      <div class="panel__card panel__card--narrow">
+        <h2 class="panel__title">Offline question paper</h2>
+        <p class="panel__lede">Generate a clean question-only PDF (no answers) for offline practice, or use print mode for a paper printout.</p>
+        <div class="panel__actions panel__actions--column">
+          <button class="btn btn--primary btn--lg" id="btn-download-pdf" type="button">Download Mock for Offline Practice</button>
+          <button class="btn btn--ghost btn--lg" id="btn-print-mock" type="button">Print Mock</button>
+        </div>
+        <p class="pdf-status" id="pdf-status"></p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="app-footer no-print">
+    <span>CSIR-NET Mock Converter — runs entirely in your browser. No data leaves your device.</span>
+  </footer>
+</div>
+
+<!-- Full-screen live exam UI, injected by exam.js. Sits outside #app-shell
+     so it stays visible while the dashboard (#app-shell) is hidden. -->
+<div id="exam-root" hidden></div>
+
+<!-- ============ PRINT-ONLY question paper (built by JS, hidden on screen) ============ -->
+<div id="print-root" class="print-root"></div>
+
+<script src="js/parser.js"></script>
+<script src="js/scoring.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/mathRender.js"></script>
+<script src="js/exam.js"></script>
+<script src="js/pdfExport.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+/* Applied only when printing (media="print" on the <link>, plus a
+   window.print() call triggered from the "Print Mock" button after
+   pdfExport.js has built #print-root). */
+
+.no-print,
+.toast-region,
+.app-header,
+.app-footer,
+#exam-root,
+.exam-shell {
+  display: none !important;
+}
+
+.app-main { display: none !important; }
+
+#print-root {
+  position: static !important;
+  left: auto !important;
+  width: auto !important;
+}
+
+.print-paper {
+  padding: 0;
+}
+
+@page {
+  margin: 16mm 14mm;
+}
